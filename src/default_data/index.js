@@ -1,6 +1,7 @@
 module.exports = [
     {
         name: 'context',
+        category: 'Features',
         storeName: {
             en: "Context and Objectives"
         },
