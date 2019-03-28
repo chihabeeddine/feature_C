@@ -259,11 +259,6 @@ export default {
                 border-radius: 7px;
                 transition: transform 0.4s ease-out, box-shadow 0.4s ease-out;
 
-                &:hover {
-                    box-shadow: 0 16px 32px rgba(113, 124, 137, 0.4);
-                    transform: translateY(-10px);
-                }
-
                 .background {
                     border-radius: 7px;
                     overflow: hidden;
