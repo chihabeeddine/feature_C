@@ -274,7 +274,7 @@ export default {
                     position: absolute;
                     top: 0;
                     left: 0;
-                    transform: translate(-50%, -50%);
+                    //transform: translate(-50%, -50%);
                     width: 30px;
                     height: 30px;
                     color: white;
@@ -285,7 +285,7 @@ export default {
                     align-items: center;
                     font-size: 1.2rem;
                     cursor: pointer;
-                    z-index: 1;
+                    z-index: 2;
                 }
                 /* wwManager:end */
             }
