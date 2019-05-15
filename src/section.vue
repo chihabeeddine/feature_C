@@ -257,6 +257,7 @@ export default {
                 min-height: 50px;
                 box-shadow: 0 10px 40px 0 rgba(113, 124, 137, 0.2);
                 border-radius: 7px;
+                overflow: hidden;
                 transition: transform 0.4s ease-out, box-shadow 0.4s ease-out;
 
                 .background {
