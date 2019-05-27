@@ -1,12 +1,11 @@
 module.exports = [
     {
-        name: 'context',
-        category: 'Features',
+        name: 'slider',
         storeName: {
-            en: "Context and Objectives"
+            en_GB: "Slider section"
         },
         storeDesc: {
-            en: "Template for my first section"
+            en_GB: "Slider section with swipe features"
         }
     }
 ]

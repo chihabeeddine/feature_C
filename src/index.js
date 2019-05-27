@@ -5,6 +5,7 @@ const version = '__VERSION__';
 
 const addComponent = function () {
     if (window.vm) {
+
         window.vm.addComponent({
             name: name,
             version: version,
