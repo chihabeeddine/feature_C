@@ -26,7 +26,21 @@
                     </wwContextMenu>
                     <!-- wwManager:end -->
                     <wwObject class="background" :ww-object="feature.background" ww-category="background"></wwObject>
+                    <!-- team row -->
+                    <div class="team-pic-container" :ww-list="feature.teamRow">
+                        <wwObject
+                            tag="div"
+                            class="team-pic"
+                            v-for="(teamPic, index) in feature.teamRow"
+                            :key="index"
+                            :ww-object="teamPic"
+                            @ww-add-before="addElement(feature.teamRow, index)"
+                            @ww-add="addPicture(feature.teamRow, index, 'before')"
+                            @ww-remove="remove(feature.teamRow, index)"
+                        ></wwObject>
+                    </div>
 
+                    <!-- content -->
                     <wwLayoutColumn tag="div" ww-default="ww-image" :ww-list="feature.contents" class="content" @ww-add="add(feature.contents, $event)" @ww-remove="remove(feature.contents, $event)">
                         <wwObject tag="div" v-for="content in feature.contents" :key="content.uniqueId" :ww-object="content"></wwObject>
                     </wwLayoutColumn>
@@ -34,7 +48,7 @@
             </div>
         </div>
 
-        <v-touch ref="swiper" @swipeleft="nextSlide()" @swiperight="prevSlide()" class="container mobile-wrapper">
+        <v-touch ref="swiper" :enabled="!editMode" @swipeleft="nextSlide()" @swiperight="prevSlide()" :swipe-options="{ threshold: 10, velocity: 0.2 }" class="container mobile-wrapper">
             <div class="container-center" :style="[mobileStyle, mobileTransition]">
                 <div class="thumbnail-container" v-for="feature in section.data.features" :key="feature.uniqueId" :style="cardWidth">
                     <!-- wwManager:start -->
@@ -88,7 +102,9 @@ export default {
         return {
             maxThumbnailsPerLine: 4,
             columnWidth: { 'width': 'calc(33.33% - 30px)' },
-            sliderPosition: 0
+            sliderPosition: 0,
+
+
         }
     },
     computed: {
@@ -143,15 +159,42 @@ export default {
             this.section.data.features.push(
                 {
                     background: wwLib.wwObject.getDefault({ type: 'ww-color', data: { color: 'white' } }),
-                    contents: []
+                    contents: [],
+                    teamRow: [
+                        wwLib.wwObject.getDefault({
+                            type: "ww-image",
+                            data: {
+                                url:
+                                    "https://wewebapp.s3.eu-west-3.amazonaws.com/designs/7/sections/KefPf5JD79qTCrJo1GYSLxGnBszQcmu0.png"
+                            }
+                        })
+                    ]
                 },
                 {
                     background: wwLib.wwObject.getDefault({ type: 'ww-color', data: { color: 'white' } }),
-                    contents: []
+                    contents: [],
+                    teamRow: [
+                        wwLib.wwObject.getDefault({
+                            type: "ww-image",
+                            data: {
+                                url:
+                                    "https://wewebapp.s3.eu-west-3.amazonaws.com/designs/7/sections/KefPf5JD79qTCrJo1GYSLxGnBszQcmu0.png"
+                            }
+                        })
+                    ]
                 },
                 {
                     background: wwLib.wwObject.getDefault({ type: 'ww-color', data: { color: 'white' } }),
-                    contents: []
+                    contents: [],
+                    teamRow: [
+                        wwLib.wwObject.getDefault({
+                            type: "ww-image",
+                            data: {
+                                url:
+                                    "https://wewebapp.s3.eu-west-3.amazonaws.com/designs/7/sections/KefPf5JD79qTCrJo1GYSLxGnBszQcmu0.png"
+                            }
+                        })
+                    ]
                 },
 
             )
@@ -164,8 +207,6 @@ export default {
     },
     mounted() {
         this.init();
-        if (this.editMode)
-            this.$refs.swiper.disable('swipe')
     },
     beforeDestroy() {
         window.removeEventListener("resize", this.setThumbnailsPerLine);
@@ -197,10 +238,17 @@ export default {
             }
 
         },
+
         switchToIndex(index, position) {
-            if (position < this.section.data.features.length && index != position) {
-                this.sliderPosition = position
+            try {
+                if (position < this.section.data.features.length && index != position) {
+                    this.sliderPosition = position
+                }
+            } catch (err) {
+                wwLib.wwLog.error('ERROR : ', err);
+
             }
+
         },
 
         setThumbnailsPerLine() {
@@ -247,206 +295,142 @@ export default {
                 const index = _index + up
                 const newCard = {
                     background: wwLib.wwObject.getDefault({ type: 'ww-color', data: { color: 'white' } }),
-                    contents: []
+                    contents: [],
+                    teamRow: []
                 }
-
                 this.section.data.features.splice(index, 0, newCard);
                 this.sectionCtrl.update(this.section);
-
-
-                // this.columnWidth = { 'width': "calc(" + 100 / (this.featuresLength) + "%   - 30px)" }
             } catch (err) {
                 wwLib.wwLog.error('ERROR : ', err);
             }
         },
+        /* add picture */
 
+        addElement(list, index) {
+            let newCopie = JSON.parse(JSON.stringify(list[0]))
+            wwLib.wwUtils.changeUniqueIds(newCopie)
+            list.splice(index, 0, newCopie);
+            this.sectionCtrl.update(this.section);
+        },
 
 
         removeFeature(index) {
+            try {
+                this.section.data.features.splice(index, 1);
+                if (!this.section.data.features.length) {
+                    this.addFeature(0, 'after');
+                }
+                this.sectionCtrl.update(this.section);
+                this.$forceUpdate()
+            } catch (err) {
+                wwLib.wwLog.error('ERROR : ', err);
 
-            this.section.data.features.splice(index, 1);
-            if (!this.section.data.features.length) {
-                this.addFeature(0, 'after');
             }
-            this.sectionCtrl.update(this.section);
-            this.$forceUpdate()
-
-            //this.columnWidth = { 'width': "calc(" + 100 / (this.featuresLength) + "%   - 30px)" }
         },
 
-        /* Open a popup to change the border color */
-        async customizeColor() {
-            try {
-                wwLib.wwObjectHover.setLock(this);
 
-                let options = await this.edit()
-                const result = await wwLib.wwPopups.open(options);
-                /*=============================================m_ÔÔ_m=============================================\
-                  STYLE
-                \================================================================================================*/
+        async openOptions() {
+            try {
+                let editList = {
+                    WWSLIDER_CONFIG: {
+                        title: {
+                            en: 'Edit section',
+                            fr: 'Editer la section'
+                        },
+                        desc: {
+                            en: 'Edit section per line cards and navigation dots color',
+                            fr: 'Editer le nombre de carte par ligne et la couleur des points de navigation'
+                        },
+                        icon: 'wwi wwi-config',
+                        shortcut: 'g',
+                        next: 'WWSLIDER_CUSTOM'
+                    },
+
+                }
+
+                wwLib.wwPopups.addStory('WWSLIDER_CONFIG', {
+                    title: {
+                        en: 'Configuration',
+                        fr: 'Configurer'
+                    },
+                    type: 'wwPopupEditWwObject',
+                    buttons: null,
+                    storyData: {
+                        list: editList
+                    }
+                })
+                wwLib.wwPopups.addStory('WWSLIDER_CUSTOM', {
+                    title: {
+                        en: 'Fill in code',
+                        fr: 'Inserer le code'
+                    },
+                    type: 'wwPopupForm',
+                    storyData: {
+                        fields: [
+                            {
+                                label: {
+                                    en: 'Column per line',
+                                    fr: 'Nombre de colonnes par ligne :'
+                                },
+                                type: 'text',
+                                key: 'columnPerLine',
+                                valueData: 'section.data.thumbnailsPerLine',
+                                desc: {
+                                    en: 'The number of column per line',
+                                    fr: 'Le nombre de colonnes par ligne'
+                                }
+
+                            },
+                            {
+                                label: {
+                                    en: 'Navigation dots color:',
+                                    fr: 'Couleur des points de navigations :'
+                                },
+                                type: 'color',
+                                key: 'dotsColor',
+                                valueData: 'section.data.dotColor',
+                                desc: {
+                                    en: 'Choose a Nav dots color:',
+                                    fr: 'Changer la couleur des points de navigations :'
+                                },
+                            },
+
+                        ]
+                    },
+                    buttons: {
+                        NEXT: {
+                            text: {
+                                en: 'Finish',
+                                fr: 'Terminer'
+                            },
+                            next: null
+                        }
+                    }
+                })
+                let options = {
+                    firstPage: 'WWSLIDER_CONFIG',
+                    data: {
+                        columnPerLine: this.section.data.thumbnailsPerLine,
+                        section: this.section,
+
+                    },
+                }
+
+                const result = await wwLib.wwPopups.open(options)
                 if (typeof (result) != 'undefined') {
                     if (typeof (result.dotsColor) != 'undefined') {
                         this.section.data.dotColor = result.dotsColor
                     }
+                    if (result.columnPerLine) {
+                        this.section.data.thumbnailsPerLine = result.columnPerLine;
+                        this.sectionCtrl.update(this.section);
+                        this.setThumbnailsPerLine();
+                    }
                     this.sectionCtrl.update(this.section);
                 }
-                wwLib.wwObjectHover.removeLock();
             } catch (err) {
                 wwLib.wwLog.error('ERROR : ', err);
             }
-        },
-        /* create a popup forum */
-        async edit() {
-            wwLib.wwPopups.addStory('WWSLIDER_CUSTOM', {
-                title: {
-                    en: 'Color picker',
-                    fr: 'Choisir une couleur'
-                },
-                type: 'wwPopupForm',
-                storyData: {
-                    fields: [
-                        {
-                            label: {
-                                en: 'Navigation dots color:',
-                                fr: 'Couleur des points de navigations :'
-                            },
-                            type: 'color',
-                            key: 'dotsColor',
-                            valueData: 'section.data.dotColor',
-                            desc: {
-                                en: 'Choose a Nav dots color:',
-                                fr: 'Changer la couleur des points de navigations :'
-                            }
-                        },
-                    ]
-                },
-                buttons: {
-
-                    NEXT: {
-                        text: {
-                            en: 'Ok',
-                            fr: 'Ok'
-                        },
-                        next: false
-                    }
-                }
-            })
-
-            let options = {
-                firstPage: 'WWSLIDER_CUSTOM',
-                data: {
-                    section: this.section,
-                }
-            }
-            return options
-        },
-
-        async openOptions() {
-            let editList = {
-                WWSLIDER_CONFIG: {
-                    title: {
-                        en: 'Edit section',
-                        fr: 'Editer la section'
-                    },
-                    desc: {
-                        en: 'Edit section per line cards and navigation dots color',
-                        fr: 'Editer le nombre de carte par ligne et la couleur des points de navigation'
-                    },
-                    icon: 'wwi wwi-config',
-                    shortcut: 'g',
-                    next: 'WWSLIDER_CUSTOM'
-                },
-
-            }
-
-            wwLib.wwPopups.addStory('WWSLIDER_CONFIG', {
-                title: {
-                    en: 'Configuration',
-                    fr: 'Configurer'
-                },
-                type: 'wwPopupEditWwObject',
-                buttons: null,
-                storyData: {
-                    list: editList
-                }
-            })
-            wwLib.wwPopups.addStory('WWSLIDER_CUSTOM', {
-                title: {
-                    en: 'Fill in code',
-                    fr: 'Inserer le code'
-                },
-                type: 'wwPopupForm',
-                storyData: {
-                    fields: [
-                        {
-                            label: {
-                                en: 'Column per line',
-                                fr: 'Nombre de colonnes par ligne :'
-                            },
-                            type: 'text',
-                            key: 'columnPerLine',
-                            valueData: 'section.data.thumbnailsPerLine',
-                            desc: {
-                                en: 'The number of column per line',
-                                fr: 'Le nombre de colonnes par ligne'
-                            }
-
-                        },
-                        {
-                            label: {
-                                en: 'Navigation dots color:',
-                                fr: 'Couleur des points de navigations :'
-                            },
-                            type: 'color',
-                            key: 'dotsColor',
-                            valueData: 'section.data.dotColor',
-                            desc: {
-                                en: 'Choose a Nav dots color:',
-                                fr: 'Changer la couleur des points de navigations :'
-                            },
-                        },
-
-                    ]
-                },
-                buttons: {
-                    NEXT: {
-                        text: {
-                            en: 'Finish',
-                            fr: 'Terminer'
-                        },
-                        next: null
-                    }
-                }
-            })
-            let options = {
-                firstPage: 'WWSLIDER_CONFIG',
-                data: {
-                    columnPerLine: this.section.data.thumbnailsPerLine,
-                    section: this.section,
-
-                },
-            }
-
-            const result = await wwLib.wwPopups.open(options)
-            if (typeof (result) != 'undefined') {
-                if (typeof (result.dotsColor) != 'undefined') {
-                    this.section.data.dotColor = result.dotsColor
-                }
-                if (result.columnPerLine) {
-                    this.section.data.thumbnailsPerLine = result.columnPerLine;
-                    this.sectionCtrl.update(this.section);
-                    this.setThumbnailsPerLine();
-                }
-                this.sectionCtrl.update(this.section);
-            }
-
-
-            if (result.columnPerLine) {
-                this.section.data.thumbnailsPerLine = result.columnPerLine;
-                this.sectionCtrl.update(this.section);
-            }
-
-            console.log(result);
         },
         /* Used on mobile version to swipe */
         remove(list, options) {
@@ -502,6 +486,19 @@ export default {
                 border-radius: 7px;
                 overflow: hidden;
             }
+            .team-pic-container {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                .team-pic {
+                    width: 100px;
+                    position: relative;
+                }
+                .team-pic:not(:first-child) {
+                    margin-left: -25px;
+                }
+            }
+
             .content {
                 position: relative;
             }
