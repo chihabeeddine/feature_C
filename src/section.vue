@@ -6,7 +6,7 @@
 <template>
     <div>
         <!-- wwManager:start -->
-        <wwSectionEditMenu :sectionCtrl="sectionCtrl"></wwSectionEditMenu>
+        <wwSectionEditMenu :sectionCtrl="sectionCtrl" :options="openOptions"></wwSectionEditMenu>
         <!-- wwManager:end -->
         <wwObject class="background" :ww-object="section.data.bg" ww-category="background"></wwObject>
 
@@ -35,8 +35,8 @@
         </div>
 
         <v-touch ref="swiper" @swipeleft="nextSlide()" @swiperight="prevSlide()" class="container mobile-wrapper">
-            <div class="container-center" :style="mobileStyle">
-                <div class="thumbnail-container" v-for="feature in section.data.features" :key="feature.uniqueId">
+            <div class="container-center" :style="[mobileStyle, mobileTransition]">
+                <div class="thumbnail-container" v-for="feature in section.data.features" :key="feature.uniqueId" :style="cardWidth">
                     <!-- wwManager:start -->
                     <wwContextMenu
                         tag="div"
@@ -87,7 +87,7 @@ export default {
     },
     data() {
         return {
-            columnWidth: { 'width': 'calc(33.33% - 30px)' },
+            columnWidth: { 'width': 'calc(33.33% - 30px)' }, //TODO:
             sliderPosition: 0
         }
     },
@@ -106,10 +106,17 @@ export default {
             return this.section.data.features.length
         },
         mobileStyle() {
-
-            return { 'width': 'calc(' + this.featuresLength + ' * 100%)', 'transform': 'translate(calc(' + (- this.sliderPosition * (100 / this.featuresLength)) + '% + ' + this.sliderPosition * 30 + 'px ), 0)' }
+            return { 'width': 'calc(' + this.featuresLength + ' * 100%)' }
         },
+        mobileTransition() {
+            return { 'transform': 'translate(calc(' + (- this.sliderPosition * (100 / this.featuresLength)) + '% + ' + this.sliderPosition * 32 + 'px ), 0)' }
+        },
+        cardWidth() {
+            return { 'width': 'calc(' + (100 / this.featuresLength) + ' - 50px)' }
+        }
     },
+
+    /* add  margin-left 25px, width calc( 100/ nmber -50px) margin-left 15px */
     created() {
 
         let needUpdate = false
@@ -127,6 +134,10 @@ export default {
         if (!this.section.data.features) {
             this.section.data.features = []
             needUpdate = true
+        }
+        if (!this.section.data.thumbnailsPerLine) {
+            this.section.data.thumbnailsPerLine = 4;
+            needUpdate = true;
         }
 
         if (_.isEmpty(this.section.data.features)) {
@@ -160,6 +171,34 @@ export default {
             this.$refs.swiper.disable('swipe')
     },
     methods: {
+        nextSlide() {
+            try {
+                this.sliderPosition++
+                if (this.sliderPosition > this.featuresLength - 1)
+                    this.sliderPosition = 0
+                this.$forceUpdate()
+            } catch (err) {
+                wwLib.wwLog.error('ERROR : ', err);
+            }
+        },
+
+        prevSlide() {
+            try {
+                this.sliderPosition--
+                if (this.sliderPosition < 0)
+                    this.sliderPosition = this.featuresLength - 1
+                this.$forceUpdate()
+            } catch (err) {
+                wwLib.wwLog.error('ERROR : ', err);
+            }
+
+        },
+        switchToIndex(index, position) {
+            if (position < this.section.data.features.length && index != position) {
+                this.sliderPosition = position
+            }
+        },
+
         /* wwManager:start */
         add(list, options) {
             list.splice(options.index, 0, options.wwObject);
@@ -184,7 +223,6 @@ export default {
                 wwLib.wwLog.error('ERROR : ', err);
             }
         },
-
 
         removeFeature(index) {
 
@@ -229,13 +267,12 @@ export default {
                     fields: [
                         {
                             label: {
-                                en: 'Nav dots color:',
+                                en: 'Navigation dots color:',
                                 fr: 'Couleur des points de navigations :'
                             },
                             type: 'color',
                             key: 'dotsColor',
-                            value: "#42b983",
-                            valueData: 'dotsColor',
+                            valueData: 'section.data.dotColor',
                             desc: {
                                 en: 'Choose a Nav dots color:',
                                 fr: 'Changer la couleur des points de navigations :'
@@ -258,35 +295,35 @@ export default {
             let options = {
                 firstPage: 'WWSLIDER_CUSTOM',
                 data: {
-                    wwObject: this.wwObject,
+                    section: this.section,
                 }
             }
             return options
         },
 
+        async openOptions() {
+            let options = {
+                firstPage: 'FEATURE_C_COLUMN_COUNT',
+                data: {
+                    columnPerLine: this.section.data.thumbnailsPerLine
+                },
+            }
+
+            const result = await wwLib.wwPopups.open(options)
+
+            if (result.columnPerLine) {
+                this.section.data.thumbnailsPerLine = result.columnPerLine;
+
+                this.sectionCtrl.update(this.section);
+
+                this.setThumbnailsPerLine();
+            }
+
+
+            console.log(result);
+        },
         /* Used on mobile version to swipe */
-        nextSlide() {
-            try {
-                this.sliderPosition++
-                if (this.sliderPosition > this.featuresLength - 1)
-                    this.sliderPosition = 0
-                this.$forceUpdate()
-            } catch (err) {
-                wwLib.wwLog.error('ERROR : ', err);
-            }
-        },
 
-        prevSlide() {
-            try {
-                this.sliderPosition--
-                if (this.sliderPosition < 0)
-                    this.sliderPosition = this.featuresLength - 1
-                this.$forceUpdate()
-            } catch (err) {
-                wwLib.wwLog.error('ERROR : ', err);
-            }
-
-        },
 
         remove(list, options) {
             try {
@@ -300,11 +337,7 @@ export default {
 
         /* wwManager:end */
 
-        switchToIndex(index, position) {
-            if (position < this.section.data.features.length && index != position) {
-                this.sliderPosition = position
-            }
-        },
+
 
     }
 };
@@ -369,6 +402,9 @@ export default {
                 z-index: 2;
             }
             /* wwManager:end */
+        }
+        .thumbnail-container:first-child {
+            margin-left: 25px;
         }
     }
 }
