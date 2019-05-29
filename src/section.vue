@@ -26,6 +26,10 @@
                     </wwContextMenu>
                     <!-- wwManager:end -->
                     <wwObject class="background" :ww-object="feature.background" ww-category="background"></wwObject>
+
+                    <div class="forehead-banner">
+                        <wwObject tag="div" class="forehead" :ww-object="feature.banner" ww-default="ww-image"></wwObject>
+                    </div>
                     <!-- team row -->
                     <div class="team-pic-container" :ww-list="feature.teamRow">
                         <wwObject
@@ -34,13 +38,12 @@
                             v-for="(teamPic, index) in feature.teamRow"
                             :key="index"
                             :ww-object="teamPic"
-                            @ww-add-before="addElement(feature.teamRow, index)"
-                            @ww-add="addPicture(feature.teamRow, index, 'before')"
-                            @ww-remove="remove(feature.teamRow, index)"
+                            @ww-add-before="addElement(feature.teamRow, index, 'before')"
+                            @ww-add-after="addElement(feature.teamRow, index, 'after')"
+                            @ww-remove="removeElement(feature.teamRow, index)"
                         ></wwObject>
                     </div>
 
-                    <!-- content -->
                     <wwLayoutColumn tag="div" ww-default="ww-image" :ww-list="feature.contents" class="content" @ww-add="add(feature.contents, $event)" @ww-remove="remove(feature.contents, $event)">
                         <wwObject tag="div" v-for="content in feature.contents" :key="content.uniqueId" :ww-object="content"></wwObject>
                     </wwLayoutColumn>
@@ -64,6 +67,23 @@
                     </wwContextMenu>
                     <!-- wwManager:end -->
                     <wwObject class="background" :ww-object="feature.background" ww-category="background"></wwObject>
+
+                    <div class="forehead-banner">
+                        <wwObject tag="div" class="forehead" :ww-object="feature.banner" ww-default="ww-image"></wwObject>
+                    </div>
+                    <!-- team row -->
+                    <div class="team-pic-container" :ww-list="feature.teamRow">
+                        <wwObject
+                            tag="div"
+                            class="team-pic"
+                            v-for="(teamPic, index) in feature.teamRow"
+                            :key="index"
+                            :ww-object="teamPic"
+                            @ww-add-before="addElement(feature.teamRow, index, 'before')"
+                            @ww-add-after="addElement(feature.teamRow, index, 'after')"
+                            @ww-remove="removeElement(feature.teamRow, index)"
+                        ></wwObject>
+                    </div>
 
                     <wwLayoutColumn tag="div" ww-default="ww-image" :ww-list="feature.contents" class="content" @ww-add="add(feature.contents, $event)" @ww-remove="remove(feature.contents, $event)">
                         <wwObject tag="div" v-for="content in feature.contents" :key="content.uniqueId" :ww-object="content"></wwObject>
@@ -156,48 +176,21 @@ export default {
         }
 
         if (_.isEmpty(this.section.data.features)) {
-            this.section.data.features.push(
-                {
-                    background: wwLib.wwObject.getDefault({ type: 'ww-color', data: { color: 'white' } }),
-                    contents: [],
-                    teamRow: [
-                        wwLib.wwObject.getDefault({
-                            type: "ww-image",
-                            data: {
-                                url:
-                                    "https://wewebapp.s3.eu-west-3.amazonaws.com/designs/7/sections/KefPf5JD79qTCrJo1GYSLxGnBszQcmu0.png"
-                            }
-                        })
-                    ]
-                },
-                {
-                    background: wwLib.wwObject.getDefault({ type: 'ww-color', data: { color: 'white' } }),
-                    contents: [],
-                    teamRow: [
-                        wwLib.wwObject.getDefault({
-                            type: "ww-image",
-                            data: {
-                                url:
-                                    "https://wewebapp.s3.eu-west-3.amazonaws.com/designs/7/sections/KefPf5JD79qTCrJo1GYSLxGnBszQcmu0.png"
-                            }
-                        })
-                    ]
-                },
-                {
-                    background: wwLib.wwObject.getDefault({ type: 'ww-color', data: { color: 'white' } }),
-                    contents: [],
-                    teamRow: [
-                        wwLib.wwObject.getDefault({
-                            type: "ww-image",
-                            data: {
-                                url:
-                                    "https://wewebapp.s3.eu-west-3.amazonaws.com/designs/7/sections/KefPf5JD79qTCrJo1GYSLxGnBszQcmu0.png"
-                            }
-                        })
-                    ]
-                },
+            for (let i = 0; i < 3; i++) {
+                this.section.data.features.push(
+                    {
+                        background: wwLib.wwObject.getDefault({ type: 'ww-color', data: { color: 'white' } }),
+                        banner: wwLib.wwObject.getDefault({ type: 'ww-image' }),
+                        contents: [],
+                        teamRow: [
+                            wwLib.wwObject.getDefault({
+                                type: "ww-image",
+                            })
+                        ]
+                    },
+                )
+            }
 
-            )
             needUpdate = true;
         }
 
@@ -222,8 +215,8 @@ export default {
                 if (this.sliderPosition > this.featuresLength - 1)
                     this.sliderPosition = 0
                 this.$forceUpdate()
-            } catch (err) {
-                wwLib.wwLog.error('ERROR : ', err);
+            } catch (error) {
+                wwLib.wwLog.error('ERROR : ', error);
             }
         },
 
@@ -233,8 +226,8 @@ export default {
                 if (this.sliderPosition < 0)
                     this.sliderPosition = this.featuresLength - 1
                 this.$forceUpdate()
-            } catch (err) {
-                wwLib.wwLog.error('ERROR : ', err);
+            } catch (error) {
+                wwLib.wwLog.error('ERROR : ', error);
             }
 
         },
@@ -244,47 +237,55 @@ export default {
                 if (position < this.section.data.features.length && index != position) {
                     this.sliderPosition = position
                 }
-            } catch (err) {
-                wwLib.wwLog.error('ERROR : ', err);
+            } catch (error) {
+                wwLib.wwLog.error('ERROR : ', error);
 
             }
 
         },
 
         setThumbnailsPerLine() {
-            let width = window.innerWidth;
-            if (width < 576) {
-                this.maxThumbnailsPerLine = 1;
-            }
-            else if (width < 992) {
-                this.maxThumbnailsPerLine = 2;
-            }
-            else if (width < 1200) {
-                this.maxThumbnailsPerLine = 3;
-            }
-            else {
-                this.maxThumbnailsPerLine = 4;
-            }
+            try {
+                let width = window.innerWidth;
+                if (width < 576) {
+                    this.maxThumbnailsPerLine = 1;
+                }
+                else if (width < 992) {
+                    this.maxThumbnailsPerLine = 2;
+                }
+                else if (width < 1200) {
+                    this.maxThumbnailsPerLine = 3;
+                }
+                else {
+                    this.maxThumbnailsPerLine = 4;
+                }
 
-            switch (Math.min(this.section.data.thumbnailsPerLine, this.maxThumbnailsPerLine)) {
-                case 1:
-                    this.columnWidth = { 'width': "calc(100% - 30px)" };
-                    break;
-                case 2:
-                    this.columnWidth = { 'width': "calc(50% - 30px)" };
-                    break;
-                case 3:
-                    this.columnWidth = { 'width': "calc(33.3333% - 30px)" };
-                    break;
-                default:
-                    this.columnWidth = { 'width': "calc(25% - 30px)" };
-                    break;
+                switch (Math.min(this.section.data.thumbnailsPerLine, this.maxThumbnailsPerLine)) {
+                    case 1:
+                        this.columnWidth = { 'width': "calc(100% - 30px)" };
+                        break;
+                    case 2:
+                        this.columnWidth = { 'width': "calc(50% - 30px)" };
+                        break;
+                    case 3:
+                        this.columnWidth = { 'width': "calc(33.3333% - 30px)" };
+                        break;
+                    default:
+                        this.columnWidth = { 'width': "calc(25% - 30px)" };
+                        break;
+                }
+            } catch (error) {
+                wwLib.wwLog.error('ERROR : ', error);
             }
         },
         /* wwManager:start */
         add(list, options) {
-            list.splice(options.index, 0, options.wwObject);
-            this.sectionCtrl.update(this.section);
+            try {
+                list.splice(options.index, 0, options.wwObject);
+                this.sectionCtrl.update(this.section);
+            } catch (error) {
+                wwLib.wwLog.error('ERROR : ', error);
+            }
         },
 
 
@@ -301,16 +302,37 @@ export default {
                 this.section.data.features.splice(index, 0, newCard);
                 this.sectionCtrl.update(this.section);
             } catch (err) {
-                wwLib.wwLog.error('ERROR : ', err);
+                wwLib.wwLog.error('ERROR : ', error);
             }
         },
         /* add picture */
 
-        addElement(list, index) {
-            let newCopie = JSON.parse(JSON.stringify(list[0]))
-            wwLib.wwUtils.changeUniqueIds(newCopie)
-            list.splice(index, 0, newCopie);
-            this.sectionCtrl.update(this.section);
+        addElement(list, _index, where) {
+            console.log('where:', where)
+            try {
+                const up = (where == 'after') ? parseInt(1) : 0;
+                const index = _index + up
+                console.log('index:', index)
+                let newCopie = JSON.parse(JSON.stringify(list[0]))
+
+                wwLib.wwUtils.changeUniqueIds(newCopie)
+                list.splice(index, 0, newCopie);
+                this.sectionCtrl.update(this.section);
+            } catch (error) {
+                wwLib.wwLog.error('ERROR : ', error);
+            }
+        },
+        removeElement(list, index) {
+            try {
+                if (list.length > 1) {
+                    list.splice(index, 1);
+                    this.sectionCtrl.update(this.section);
+                }
+
+            } catch (error) {
+                wwLib.wwLog.error('ERROR : ', error);
+
+            }
         },
 
 
@@ -322,8 +344,8 @@ export default {
                 }
                 this.sectionCtrl.update(this.section);
                 this.$forceUpdate()
-            } catch (err) {
-                wwLib.wwLog.error('ERROR : ', err);
+            } catch (error) {
+                wwLib.wwLog.error('ERROR : ', error);
 
             }
         },
@@ -428,8 +450,8 @@ export default {
                     }
                     this.sectionCtrl.update(this.section);
                 }
-            } catch (err) {
-                wwLib.wwLog.error('ERROR : ', err);
+            } catch (error) {
+                wwLib.wwLog.error('ERROR : ', error);
             }
         },
         /* Used on mobile version to swipe */
@@ -437,8 +459,8 @@ export default {
             try {
                 list.splice(options.index, 1);
                 this.sectionCtrl.update(this.section);
-            } catch (err) {
-                wwLib.wwLog.error('ERROR : ', err);
+            } catch (error) {
+                wwLib.wwLog.error('ERROR : ', error);
             }
 
         },
@@ -464,6 +486,16 @@ export default {
 }
 
 .container {
+    position: relative;
+    @media (min-width: 768px) {
+        width: 80%;
+    }
+    @media (min-width: 992px) {
+        width: 80%;
+    }
+    @media (min-width: 1200px) {
+        width: 70%;
+    }
     .container-center {
         display: flex;
         transition: transform 0.5s ease;
@@ -481,21 +513,31 @@ export default {
             border-radius: 7px;
             overflow: hidden;
             transition: transform 0.4s ease-out, box-shadow 0.4s ease-out;
-
+            .forehead-banner {
+                position: relative;
+            }
             .background {
                 border-radius: 7px;
                 overflow: hidden;
             }
             .team-pic-container {
+                margin-top: -50px;
                 display: flex;
+                flex-direction: row;
+                justify-content: flex-start;
                 align-items: center;
-                justify-content: center;
                 .team-pic {
-                    width: 100px;
-                    position: relative;
+                    width: 90px;
+                    height: 90px;
+                }
+                .team-pic:first-child {
+                    margin-left: 15px;
+                }
+                .team-pic:last-child {
+                    margin-right: 15px;
                 }
                 .team-pic:not(:first-child) {
-                    margin-left: -25px;
+                    margin-left: -20px;
                 }
             }
 
